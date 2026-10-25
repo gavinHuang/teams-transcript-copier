@@ -1,6 +1,8 @@
 // Teams chat group history extraction.
 //
-// 1. In DevTools → Elements, select the chat message list, so it becomes $0.
+// 1. The script looks for the chat list as the div with id "menur1o". If it
+//    isn't there, select the chat message list in DevTools → Elements, so it
+//    becomes $0.
 // 2. Paste this script into the Console and press Enter.
 // 3. Click back into the page and wait. The script scrolls up until the whole
 //    history has loaded, then scrolls back down collecting every message in
@@ -32,6 +34,21 @@ const normalize = s =>
     .replace(/[ \t]{2,}/g, " ")
     .trim();
 
+// Try the known chat container id first, then fall back to the element
+// selected in DevTools.
+const findChat = () => {
+  const byId = document.getElementById("menur1o");
+  if (byId) {
+    console.log("[Teams chat] using #menur1o as the chat container.");
+    return byId;
+  }
+  if (typeof $0 !== "undefined" && $0 instanceof HTMLElement) {
+    console.log("[Teams chat] #menur1o not found; using the selected element ($0).");
+    return $0;
+  }
+  return null;
+};
+
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // The selected element may be the scroller itself, a child of it, or a wrapper
@@ -46,6 +63,10 @@ const findScroller = el => {
 };
 
 (function watch(el){
+  if (!el) {
+    console.warn("[Teams chat] no chat container found. Select the chat message list in DevTools → Elements, then run again.");
+    return;
+  }
 
   // While loading history upward, messages arrive newest-first, so recording
   // waits until the downward sweep to keep them in chronological order.
@@ -192,4 +213,4 @@ const findScroller = el => {
   } else {
     console.log("Watching chat. Scroll slowly. Export with: copy([...__chat.values()].join('\\n'))");
   }
-})($0);
+})(findChat());
